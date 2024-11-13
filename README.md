@@ -28,22 +28,24 @@ pip install selenium beautifulsoup4 openpyxl
    ```python
    quiz_id = "2732"  # Задайте ID задания
    ```
+   Id можно увидеть в когда открываем результат в url как в примере:
+   https://sdo24.1580.ru/mod/quiz/report.php?id=2732&mode=overview&attempts=enrolled_with&onlygraded=0&group=222&onlyregraded=0&slotmarks=1&group=227
 
-2. **Классы для проверки**:  
+3. **Классы для проверки**:  
    Классы для проверки указываются в списке `classes_to_check` в скрипте `main_selenium.py`. Например:
 
    ```python
    classes_to_check = ["10Е1", "10Е2", "10З1", "10З2"]  # Укажите нужные классы
    ```
 
-3. **Путь до драйвера**:  
+4. **Путь до драйвера**:  
    Укажите путь к файлу `chromedriver.exe` в переменной `path_to_driver` в скрипте `main_selenium.py`. Например:
 
    ```python
    path_to_driver = r"C:path/to/chromedriver.exe"  # Укажите путь к chromedriver.exe
    ```
 
-4. **Файл с данными о классах**:  
+5. **Файл с данными о классах**:  
    В файле `class_data.json` должен быть список классов и учеников. Этот файл загружается в функцию `load_class_data`. Формат файла:
 
    ```json
