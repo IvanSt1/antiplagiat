@@ -29,7 +29,7 @@ pip install selenium beautifulsoup4 openpyxl
    quiz_id = "2732"  # Задайте ID задания
    ```
    Id можно увидеть в когда открываем результат в url как в примере:
-   https://sdo24.1580.ru/mod/quiz/report.php?id=2732&mode=overview&attempts=enrolled_with&onlygraded=0&group=222&onlyregraded=0&slotmarks=1&group=227
+   https://sdo24.1580.ru/mod/quiz/view.php?id=2475
 
 3. **Классы для проверки**:  
    Классы для проверки указываются в списке `classes_to_check` в скрипте `main_selenium.py`. Например:
