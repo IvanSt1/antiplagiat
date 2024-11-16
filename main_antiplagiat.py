@@ -43,15 +43,14 @@ def compare_ast_structures(file1, file2):
     similarity_ratio = difflib.SequenceMatcher(None, structure1, structure2).ratio()
     return similarity_ratio * 100  # Конвертируем в проценты
 
-def check_plagiarism_across_all_assignments(base_path):
+def check_plagiarism_across_all_assignments(base_path, similarity_threshold=90):
     """Проходит по всем заданиям всех классов и создает CSV и XLSX-файлы для каждого задания с отметкой 100% схожести."""
     output_folder = "plagiarism_reports"
     os.makedirs(output_folder, exist_ok=True)
 
     all_solutions = {}
-
-    # Множество для хранения уникальных имен учеников с совпадением 100%
     students_with_100 = set()
+    summary_report = {}
 
     for class_dir in os.listdir(base_path):
         class_path = os.path.join(base_path, class_dir)
@@ -74,7 +73,6 @@ def check_plagiarism_across_all_assignments(base_path):
                 
                 all_solutions[assignment_name].append((student_name, assignment_path))
     
-    # Задаем цвет для ячеек со 100%
     red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
     for assignment_name, solutions in all_solutions.items():
@@ -86,37 +84,39 @@ def check_plagiarism_across_all_assignments(base_path):
         
         for i, (student1, file1) in enumerate(solutions):
             for j, (student2, file2) in enumerate(solutions):
-                if i < j:  # Избегаем повторного сравнения и самосравнения
+                if i < j:
                     similarity = compare_ast_structures(file1, file2)
                     if similarity == 100.0:
                         students_with_100.update([student1, student2])
-                    
                     results[student1][student2] = f"{similarity:.2f}"
                     results[student2][student1] = f"{similarity:.2f}"
+                        # Добавляем совпадение в сводный отчет
+                    if similarity >= similarity_threshold:
+                        if student1 not in summary_report:
+                            summary_report[student1] = {}
+                        if student2 not in summary_report:
+                            summary_report[student2] = {}
+                        summary_report[student1].setdefault(assignment_name, []).append(student2)
+                        summary_report[student2].setdefault(assignment_name, []).append(student1)
         
-        # Запись CSV-файла для данного задания
+        # Запись CSV-файла для задания
         with open(output_csv, mode="w", newline='', encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             header = [""] + students
             writer.writerow(header)
-            
             for student, comparisons in results.items():
                 row = [student] + [comparisons[other_student] for other_student in students]
                 writer.writerow(row)
         
-        # Запись XLSX-файла с форматированием
+        # Запись XLSX-файла для задания
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = assignment_name
-
-        # Заголовок таблицы
         sheet.append([""] + students)
-        
         for student, comparisons in results.items():
             row = [student] + [comparisons[other_student] for other_student in students]
             sheet.append(row)
         
-        # Применение форматирования для ячеек со значением 100%
         for row in sheet.iter_rows(min_row=2, min_col=2, max_row=len(students) + 1, max_col=len(students) + 1):
             for cell in row:
                 if cell.value == "100.00":
@@ -125,13 +125,31 @@ def check_plagiarism_across_all_assignments(base_path):
         workbook.save(output_xlsx)
         print(f"Отчет для задания {assignment_name} сохранен как {output_csv} и {output_xlsx}")
 
+    # Создание сводного отчета
+    summary_xlsx = os.path.join(output_folder, "summary_report.xlsx")
+    summary_workbook = Workbook()
+    summary_sheet = summary_workbook.active
+    summary_sheet.title = "Summary Report"
+    assignments = sorted(all_solutions.keys())
+    summary_sheet.append(["Ученик"] + assignments)
+
+    for student in sorted(summary_report.keys()):
+        row = [student]
+        for assignment in assignments:
+            matches = summary_report[student].get(assignment, [])
+            row.append(", ".join(matches) if matches else "")
+        summary_sheet.append(row)
+
+    summary_workbook.save(summary_xlsx)
+    print(f"Сводный отчет сохранен как {summary_xlsx}")
+
     # Сохранение списка учеников с совпадением 100% в текстовый файл
     if students_with_100:
         with open("students_with_100.txt", "w", encoding="utf-8") as txtfile:
             for student in sorted(students_with_100):
                 txtfile.write(student + "\n")
-        print("\nСписок учеников с совпадением 100% сохранен в students_with_100.txt")
+        print("Список учеников с совпадением 100% сохранен в students_with_100.txt")
 
 # Пример использования
-base_path = "solutions"  # Папка с решениями
+base_path = "solutions"
 check_plagiarism_across_all_assignments(base_path)
